@@ -9,12 +9,29 @@ PORT = sys.argv[2]
 entranceList = []
 totalCars = 0
 
-async def waitForTally():
+async def waitForTally(reader, objectPos):
+        while (True):
+            global totalCars
+            try:       
+                encodedData = await reader.readline()
+                newCarCount = int(encodedData.decode('utf-8').strip())
 
+                print(newCarCount)
+                entranceList[objectPos] = (entranceList[objectPos] + newCarCount) 
+                totalCars = (totalCars + newCarCount)
+
+            except Exception as details:
+                print(details)
+                writer.write(("Invalid Input \n").encode('utf-8'))
+                await writer.drain()
+                traceback.print_exc()
+                pass
 
 async def updateClientTotal(writer):
-    writer.write(("total cars seen is now " + str(totalCars)+ " \n").encode('utf-8'))
-    await writer.drain()
+    while (True):
+        writer.write(("total cars seen is now " + str(totalCars)+ " \n").encode('utf-8'))
+        await writer.drain()
+        await asyncio.sleep(5)
 
 async def newConnection(reader, writer):
     print("starting the connection.... \n")
@@ -37,27 +54,37 @@ async def newConnection(reader, writer):
         writer.write(('Counter started for ' + streetName + ' \n').encode('utf-8'))
         await writer.drain()
 
-        while (True):
-            global totalCars
-            try:       
-                encodedData = await reader.readline()
-                newCarCount = int(encodedData.decode('utf-8').strip())
+        taskT = asyncio.create_task(waitForTally(reader, objectPos))
+        taskC = asyncio.create_task(updateClientTotal(writer))
 
-                print(newCarCount)
-                entranceList[objectPos] = (entranceList[objectPos] + newCarCount) 
-                totalCars = (totalCars + newCarCount)
+        await taskT
+        await taskC
+        # await waitForTally(reader, objectPos)
+        # await updateClientTotal(writer)
+        
+        
 
-                print(str(entranceList[objectPos] ) + " is the current count for entrance at index" + str(objectPos))
-                print("total cars seen is : " + str(totalCars))
+        # while (True):
+        #     global totalCars
+        #     try:       
+        #         encodedData = await reader.readline()
+        #         newCarCount = int(encodedData.decode('utf-8').strip())
 
-                await updateClientTotal(writer)
+        #         print(newCarCount)
+        #         entranceList[objectPos] = (entranceList[objectPos] + newCarCount) 
+        #         totalCars = (totalCars + newCarCount)
 
-            except Exception as details:
-                print(details)
-                writer.write(("Invalid Input \n").encode('utf-8'))
-                await writer.drain()
-                traceback.print_exc()
-                pass
+        #         print(str(entranceList[objectPos] ) + " is the current count for entrance at index" + str(objectPos))
+        #         print("total cars seen is : " + str(totalCars))
+
+        #         await updateClientTotal(writer)
+
+        #     except Exception as details:
+        #         print(details)
+        #         writer.write(("Invalid Input \n").encode('utf-8'))
+        #         await writer.drain()
+        #         traceback.print_exc()
+        #         pass
 
 
     except Exception as e:
