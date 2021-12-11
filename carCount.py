@@ -9,7 +9,7 @@ PORT = sys.argv[2]
 entranceList = []
 totalCars = 0
 
-async def waitForTally(reader, objectPos):
+async def waitForTally(writer, reader, objectPos):
         while (True):
             global totalCars
             try:       
@@ -31,7 +31,7 @@ async def updateClientTotal(writer):
     while (True):
         writer.write(("total cars seen is now " + str(totalCars)+ " \n").encode('utf-8'))
         await writer.drain()
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
 
 async def newConnection(reader, writer):
     print("starting the connection.... \n")
@@ -54,7 +54,7 @@ async def newConnection(reader, writer):
         writer.write(('Counter started for ' + streetName + ' \n').encode('utf-8'))
         await writer.drain()
 
-        taskT = asyncio.create_task(waitForTally(reader, objectPos))
+        taskT = asyncio.create_task(waitForTally(writer, reader, objectPos))
         taskC = asyncio.create_task(updateClientTotal(writer))
 
         await taskT
