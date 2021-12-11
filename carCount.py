@@ -9,6 +9,12 @@ PORT = sys.argv[2]
 entranceList = []
 totalCars = 0
 
+async def waitForTally():
+
+
+async def updateClientTotal(writer):
+    writer.write(("total cars seen is now " + str(totalCars)+ " \n").encode('utf-8'))
+    await writer.drain()
 
 async def newConnection(reader, writer):
     print("starting the connection.... \n")
@@ -44,6 +50,7 @@ async def newConnection(reader, writer):
                 print(str(entranceList[objectPos] ) + " is the current count for entrance at index" + str(objectPos))
                 print("total cars seen is : " + str(totalCars))
 
+                await updateClientTotal(writer)
 
             except Exception as details:
                 print(details)
