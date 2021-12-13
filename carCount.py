@@ -17,6 +17,9 @@ async def waitForTally(writer, reader, objectPos):
                 newCarCount = int(encodedData.decode('utf-8').strip())
 
                 print(newCarCount)
+
+
+                #these next two lines actually adds the newly seen cars to the connections position in the array. 
                 entranceList[objectPos] = (entranceList[objectPos] + newCarCount) 
                 totalCars = (totalCars + newCarCount)
 
@@ -33,59 +36,42 @@ async def updateClientTotal(writer):
         await writer.drain()
         await asyncio.sleep(2)
 
+
 async def newConnection(reader, writer):
+
     print("starting the connection.... \n")
 
-    
     try:
         writer.write(b'Welcome! Please enter the street name: \n')
         await writer.drain()       
         encodedData = await reader.readline()
         streetName = encodedData.decode('utf-8').strip()
         #If street name is blank, dis allow
+
+        #the program needs to be aware of what position in the index it is for everything to work smoothly.
+        #IE: the first connection will be position 0. SO the function waitForTally needs to know that it's only updating the number at that specific position
         objectPos = len(entranceList) #checking the length before adding a new item to give us the index where the item WILL be in the array
+
 
         #entranceList.append({data: 0}) could do it with object to store name with num, for now lets just store the count
 
+        #Init the count at the newest connection to 0
         entranceList.append( 0 )
         print(entranceList)
 
 
         writer.write(('Counter started for ' + streetName + ' \n').encode('utf-8'))
         await writer.drain()
+        
 
         taskT = asyncio.create_task(waitForTally(writer, reader, objectPos))
         taskC = asyncio.create_task(updateClientTotal(writer))
 
+    #two tasks needed to balance the thread. Otherwise, either the function awaiting input or the function sending over the total count will block. 
+    #This makes everything run so smoothly!! 
         await taskT
         await taskC
-        # await waitForTally(reader, objectPos)
-        # await updateClientTotal(writer)
         
-        
-
-        # while (True):
-        #     global totalCars
-        #     try:       
-        #         encodedData = await reader.readline()
-        #         newCarCount = int(encodedData.decode('utf-8').strip())
-
-        #         print(newCarCount)
-        #         entranceList[objectPos] = (entranceList[objectPos] + newCarCount) 
-        #         totalCars = (totalCars + newCarCount)
-
-        #         print(str(entranceList[objectPos] ) + " is the current count for entrance at index" + str(objectPos))
-        #         print("total cars seen is : " + str(totalCars))
-
-        #         await updateClientTotal(writer)
-
-        #     except Exception as details:
-        #         print(details)
-        #         writer.write(("Invalid Input \n").encode('utf-8'))
-        #         await writer.drain()
-        #         traceback.print_exc()
-        #         pass
-
 
     except Exception as e:
         print("failed to READ the message")
@@ -109,7 +95,7 @@ async def main():
     except Exception as details:
                     print(details)
                     #traceback.print_exc()
-                    pass
+                    pass 
 
 
 asyncio.run(main())
